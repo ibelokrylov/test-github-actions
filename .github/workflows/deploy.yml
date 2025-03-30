@@ -37,4 +37,4 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           BACKEND_PATH: ${{ secrets.BACKEND_PATH }}
         run: |
-          rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -i ~/.ssh/id_rsa -p 221" ./ "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/root/_apps/backend"
+          rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -i ~/.ssh/id_rsa -p 221" ./ "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/root/_apps/backend"
