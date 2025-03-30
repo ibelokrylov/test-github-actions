@@ -1,4 +1,3 @@
-
 name: Deploy Backend and Frontend to AlmaLinux
 
 on:
@@ -18,8 +17,9 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H -p 221 ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-        shell: /usr/bin/bash -e {0}
+          ssh-keyscan -p 221 -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        shell: bash
+
       - name: Debug SSH setup
         run: |
           ls -la ~/.ssh
@@ -28,14 +28,8 @@ jobs:
           echo "SERVER_USER: ${{ secrets.SERVER_USER }}"
           echo "SERVER_HOST: ${{ secrets.SERVER_HOST }}"
 
-      - name: Debug SERVER_HOST
-        run: 'echo "Server host: ${{secrets.SERVER_HOST}}" | sed ''s/./*/g'''
-
-      - name: DEBUG dns
-        run: nslookup ${{ secrets.SERVER_HOST }}
-
       - name: Test SSH connection
-        run: ssh -i ~/.ssh/id_rsa -p 221 -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
+        run: ssh -v -i ~/.ssh/id_rsa -p 221 -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
 
       - name: Build and Deploy Backend
         env:
@@ -43,7 +37,4 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           BACKEND_PATH: ${{ secrets.BACKEND_PATH }}
         run: |
-          echo "Executing rsync command..."
-          echo "Server host is: ${{ secrets.SERVER_HOST }}"
-          echo "rsync -avz --exclude '.git' --exclude 'node_modules' -e \"ssh -i ~/.ssh/id_rsa -p 221\" ./ \"${{secrets.SERVER_USER}}@${{secrets.SERVER_HOST}}:/home/root/_apps/backend\""
-          rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -i ~/.ssh/id_rsa -p 221" ./ "${{secrets.SERVER_USER}}@${{secrets.SERVER_HOST}}:/home/root/_apps/backend"
+          rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -i ~/.ssh/id_rsa -p 221" ./ "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/root/_apps/backend"
