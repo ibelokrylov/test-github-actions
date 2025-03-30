@@ -1,0 +1,49 @@
+
+name: Deploy Backend and Frontend to AlmaLinux
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Настройка SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H -p 221 ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        shell: /usr/bin/bash -e {0}
+      - name: Debug SSH setup
+        run: |
+          ls -la ~/.ssh
+          cat ~/.ssh/known_hosts
+          echo "SSH_PRIVATE_KEY length: $(wc -c < ~/.ssh/id_rsa)"
+          echo "SERVER_USER: ${{ secrets.SERVER_USER }}"
+          echo "SERVER_HOST: ${{ secrets.SERVER_HOST }}"
+
+      - name: Debug SERVER_HOST
+        run: 'echo "Server host: ${{secrets.SERVER_HOST}}" | sed ''s/./*/g'''
+
+      - name: DEBUG dns
+        run: nslookup ${{ secrets.SERVER_HOST }}
+
+      - name: Test SSH connection
+        run: ssh -i ~/.ssh/id_rsa -p 221 -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
+
+      - name: Build and Deploy Backend
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          BACKEND_PATH: ${{ secrets.BACKEND_PATH }}
+        run: |
+          echo "Executing rsync command..."
+          echo "Server host is: ${{ secrets.SERVER_HOST }}"
+          echo "rsync -avz --exclude '.git' --exclude 'node_modules' -e \"ssh -i ~/.ssh/id_rsa -p 221\" ./ \"${{secrets.SERVER_USER}}@${{secrets.SERVER_HOST}}:/home/root/_apps/backend\""
+          rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -i ~/.ssh/id_rsa -p 221" ./ "${{secrets.SERVER_USER}}@${{secrets.SERVER_HOST}}:/home/root/_apps/backend"
